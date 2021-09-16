@@ -7,15 +7,11 @@ import org.adaschool.tdd.repository.document.GeoLocation;
 import org.adaschool.tdd.repository.document.WeatherReport;
 import org.adaschool.tdd.service.MongoWeatherService;
 import org.adaschool.tdd.service.WeatherService;
-import org.junit.jupiter.api.Assertions;
-import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.Test;
-import org.junit.jupiter.api.TestInstance;
+import org.junit.jupiter.api.*;
 import org.mockito.Mock;
 import org.springframework.boot.test.context.SpringBootTest;
 
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
 
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.verify;
@@ -30,7 +26,7 @@ class MongoWeatherServiceTest
     @Mock
     WeatherReportRepository repository;
 
-    @BeforeAll()
+    @BeforeEach()
     public void setup()
     {
         weatherService = new MongoWeatherService( repository );
@@ -68,6 +64,26 @@ class MongoWeatherServiceTest
         Assertions.assertThrows( WeatherReportNotFoundException.class, () -> {
             weatherService.findById( weatherReportId );
         } );
+    }
+
+    @Test
+    void weatherReportFindNearLocation(){
+        GeoLocation geoLocation = new GeoLocation(2.78,5.89);
+        WeatherReport near = new WeatherReport(new GeoLocation(2.79,5.90),35f , 22f,"tester", new Date());
+        WeatherReport far = new WeatherReport(new GeoLocation(92.79,95.90),35f , 22f,"tester", new Date());
+        List<WeatherReport> list = new ArrayList<>();
+        list.add(near); list.add(far);
+        when(repository.findAll()).thenReturn(list);
+        List<WeatherReport> result = weatherService.findNearLocation(geoLocation, 2000);
+        Assertions.assertArrayEquals(new WeatherReport[]{near},result.toArray());
+    }
+
+    @Test
+    void weatherReportFindWeatherReportsByName(){
+        WeatherReport near = new WeatherReport(new GeoLocation(2.79,5.90),35f , 22f,"tester", new Date());
+        when(repository.findByReporter("tester")).thenReturn(new ArrayList<>(Collections.singletonList(near)));
+        List<WeatherReport> res = weatherService.findWeatherReportsByName("tester");
+        Assertions.assertArrayEquals(new WeatherReport[]{near}, res.toArray());
     }
 
 }
